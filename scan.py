@@ -6,7 +6,8 @@ import re
 
 
 targetList=[]
-
+vulCheck="n"
+filename=str()
 def getIp(interface):
 	ips=[]
         fip = ni.ifaddresses(interface)
@@ -18,6 +19,7 @@ def getIp(interface):
                        	if not (addr[x]=="127.0.0.1"):
                                	ips.append(addr[x])
 	if len(ips) == 0:
+		print ""
 		print "[-] No Connection on interface:" + interface 
 		exit() 
 	ipc = ips[0]
@@ -36,18 +38,16 @@ def scan(ip,port):
 	except socket.error:
 		return 0
 	except Exception, e:
+		print ""
 		print "[-]Error: "+ str(e)
 
 def check(banner, filename):
-	if not os.path.isfile(filename):
-		print "[-] " + filename + "does not exist."
-	else: 
-		f.open(filename,'r')
-		for line in f.readlines():
-			if line.strip() == banner:
-				return True 
+	f.open(filename,'r')
+	for line in f.readlines():
+		if line.strip() == banner:
+			return True 
 def finish():
-	if not len(targetList) == 0:
+	if vulCheck == "y":
 		serverList=[]
 		for banner in targetList:		
 			if check(banner,filename) == True:
@@ -57,9 +57,14 @@ def finish():
 				print""
 				print "[+] " + str(len(targetList)) + " targets found."
 	else:
-		print ""
-		print "[+] No targets found. "
-	print "Good Bye."	
+		if (len(targetList) == 0):
+			print ""
+			print "[-] No targets found. "
+		else: 
+			print ""
+			print "[+] " + len(targetLsit) + "targets found."
+			
+	print "Thank you for using my porScanner."	
 
 def main():
 	print "----------------------JS PORT SCANNER---------------------"
@@ -68,13 +73,26 @@ def main():
 	interfaces = ni.interfaces()
 	for x in range(0,len(interfaces)):
 		print str(x)+") " +  interfaces[x]
-	selectint = input("Number:")
-	ipP = getIp(interfaces[selectint])
 
-	print "Please choose the ip range"
+	selectint=-1
+	while(selectint==-1): 
+		try:
+			selectint = input("Number:")
+		except SyntaxError:
+			print "[-] Please don't leave this input empty."
+		if selectint<0 or selectint>len(interfaces):
+			selectint = -1
+
+	ipP = getIp(interfaces[selectint])
+	print ""
+	print "Please choose the ip range:"
 	print "0) all <default>"
 	print "1) own range"
-	rangeMode = input("Number:")
+	try:
+		rangeMode = input("Number:")
+	except SyntaxError:
+		rangeMode = 0
+
 	rangeStart = 1
 	rangeEnd = 255
 
@@ -88,15 +106,60 @@ def main():
 				rangeStart = 0
 				rangeEnd = 0
 				print "[-] This input can not be empty."
+				print ""
 			if rangeStart > rangeEnd or 1>rangeStart or rangeStart>255 or rangeEnd<1 or rangeStart>255 :
 				print "[-] Invalid range. Try again"
+				print ""
 			else: 
 				rangeError = False
-				
-		
-	portList=[21,22,25,80,110,443]
-	filename=sys.argv[0] + "vuln.txt"
+	print ""
+	print "Please choose the port range:"
+	print "0) typical ports <default>"
+	print "1) all (very slowly)"
+	print "2) own single port"
+	
+	try:
+		portRange = int(input("Number:"))
+	except SyntaxError:
+		portRange = 0
 
+	if portRange == 1:
+		portList=[]
+		for x in range(1,65535):
+			portList.append(x)
+	elif portRange == 2:
+		portList=[]
+		while(len(portList) == 0):
+			try:
+				portList.append(input("PORT:"))
+			except SyntaxError:
+				print "[-] Please don't leave this input empty"
+
+	else:
+		portList=[21,22,25,80,110,443]
+	print ""
+	print "Do you like to check the targets of vulnerability?"
+	try:
+		vulCheck=raw_input("Yes <y> or No <n>:") 
+	except SyntaxError:
+		vulCheck = "n"
+
+	if vulCheck == "y":
+		filePath=str()
+		while(len(filePath) == 0):
+			try:
+				filePath = raw_input("Please insert the path to your target list:")
+			except SyntaxError:
+				print "[-] Please don't leave this input empty."
+				print ""	
+			if not os.path.isfile(filePath):
+				filePath = str() 
+				print "[-] " + filePath + "does not exist. Please try again."
+				print ""
+		filename = filePath
+	else:
+		vulCheck="n"
+	print "---------------------Starting portScanner--------------------"
 	for ip in range (rangeStart,rangeEnd):
 		for port in portList:
 			sys.stdout.write('\r                                                        ')	
