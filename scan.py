@@ -4,7 +4,7 @@ import os
 import netifaces as ni
 import re
 
-
+ipList=[]
 targetList=[]
 vulCheck="n"
 filename=str()
@@ -29,17 +29,21 @@ def getIp(interface):
 
 
 def scan(ip,port): 
-	try:	
+	try:
 		s = socket.socket()
 		socket.setdefaulttimeout(2)
 		s.connect((ip,port))
-		banner = s.recv(1024)
-		return banner
+		if vulCheck == "y":
+			banner = s.recv(1024)
+			if not len(banner) == 0:
+				return banner
+			else:
+				return str(s)
+		else:
+			return str(s)
+
 	except socket.error:
 		return 0
-	except Exception, e:
-		print ""
-		print "[-]Error: "+ str(e)
 
 def check(banner, filename):
 	f.open(filename,'r')
@@ -52,17 +56,18 @@ def finish():
 		for banner in targetList:		
 			if check(banner,filename) == True:
 				serverList.append(banner)
-				print ""
-				print "[+] target found."
 				print""
 				print "[+] " + str(len(targetList)) + " targets found."
 	else:
-		if (len(targetList) == 0):
+		if (len(ipList) == 0):
 			print ""
-			print "[-] No targets found. "
+			print "[-] No devices with open ports found. "
 		else: 
 			print ""
-			print "[+] " + len(targetLsit) + "targets found."
+			for ipPort in ipList:
+				print ipPort
+			print ""
+			print "[+] FOUND " + str(len(ipList)) + " devices with open ports."
 			
 	print "Thank you for using my porScanner."	
 
@@ -167,7 +172,10 @@ def main():
 			sys.stdout.flush()
 			response = scan(ipP + '.' +str(ip),port)
 			if response != 0:
-				targetList.append(response)
+				if vulCheck == "y":
+					targetList.append((ipP + '.' +str(ip) + ':' + str(port)) + response)
+				else:
+					ipList.append( (ipP + '.' +str(ip) + ':' + str(port)) )
 
 	finish()
 	
@@ -178,3 +186,6 @@ if __name__ == '__main__':
 	except KeyboardInterrupt:
 		finish()		
 		exit()
+	except Exception, e:
+		print ""
+		print "[-] Error: " + str(e)
